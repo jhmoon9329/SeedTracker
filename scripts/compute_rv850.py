@@ -62,9 +62,12 @@ def main():
     end_dt   = end_ym.replace(day=last_day)
 
     level_str = config["U850_LEVEL"]
-    level_val = float("".join(filter(str.isdigit, level_str)))
-    if "Pa" in level_str and "hPa" not in level_str:
-        level_val /= 100.0
+    if level_str.strip():
+        level_val = float("".join(filter(str.isdigit, level_str)))
+        if "Pa" in level_str and "hPa" not in level_str:
+            level_val /= 100.0
+    else:
+        level_val = None
 
     u_files = sorted(
         f for f in Path(config["U850_DIR"]).glob("*.nc*")
@@ -94,8 +97,12 @@ def main():
         ds_u = xr.open_dataset(ufile)
         ds_v = xr.open_dataset(v_matches[0])
 
-        u = ds_u[config["U850"]].sel(lev=level_val, method="nearest")
-        v = ds_v[config["V850"]].sel(lev=level_val, method="nearest")
+        if level_val is not None:
+            u = ds_u[config["U850"]].sel(lev=level_val, method="nearest")
+            v = ds_v[config["V850"]].sel(lev=level_val, method="nearest")
+        else:
+            u = ds_u[config["U850"]]
+            v = ds_v[config["V850"]]
 
         lat = u[config["LATNAME"]].values
         lon = u[config["LONNAME"]].values
